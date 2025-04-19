@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inventory System</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    .hidden { display: none; }
+    .section { margin-bottom: 20px; }
+    .item { border: 1px solid #ccc; padding: 10px; margin: 5px; display: inline-block; width: 200px; }
+    .item img { max-width: 100%; height: auto; }
+    input, select, button { margin: 5px 0; display: block; width: 100%; }
+  </style>
+</head>
+<body>
+  <div id="login">
+    <h2>Enter Admin Code</h2>
+    <input type="password" id="adminCodeInput" placeholder="Admin Code" />
+    <button onclick="checkCode()">Unlock</button>
+  </div>
+
+  <div id="main" class="hidden">
+    <h1>Inventory System</h1>
+
+    <h2>Add New Item</h2>
+    <input type="text" id="itemName" placeholder="Item Name" />
+    <select id="itemSection">
+      <option>Jewelry</option>
+      <option>Furniture</option>
+      <option>Decoration Items</option>
+      <option>Idols</option>
+      <option>Electronics</option>
+      <option>Kitchen</option>
+      <option>Miscellaneous</option>
+      <option>Financial</option>
+    </select>
+    <input type="text" id="itemCode" placeholder="Item Code" />
+    <input type="file" id="itemPhoto" accept="image/*" />
+    <button onclick="addItem()">Add Item</button>
+
+    <h2>Database</h2>
+    <div id="database"></div>
+  </div>
+
+  <script>
+    const SECTIONS = [
+      "Jewelry", "Furniture", "Decoration Items", "Idols",
+      "Electronics", "Kitchen", "Miscellaneous", "Financial"
+    ];
+
+    let items = JSON.parse(localStorage.getItem('inventoryItems') || '[]');
+
+    function checkCode() {
+      const code = document.getElementById('adminCodeInput').value;
+      if (code === "1473") {
+        document.getElementById('login').classList.add('hidden');
+        document.getElementById('main').classList.remove('hidden');
+        displayItems();
+      } else {
+        alert("Wrong admin code!");
+      }
+    }
+
+    function addItem() {
+      const name = document.getElementById('itemName').value;
+      const section = document.getElementById('itemSection').value;
+      const code = document.getElementById('itemCode').value;
+      const photoInput = document.getElementById('itemPhoto');
+      const file = photoInput.files[0];
+
+      if (!name || !section || !code || !file) {
+        alert("Please fill in all fields including photo!");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64 = e.target.result;
+        const newItem = { name, section, code, photo: base64 };
+        items.push(newItem);
+        localStorage.setItem('inventoryItems', JSON.stringify(items));
+        displayItems();
+
+        // Reset form
+        document.getElementById('itemName').value = "";
+        document.getElementById('itemCode').value = "";
+        document.getElementById('itemPhoto').value = "";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function displayItems() {
+      const db = document.getElementById('database');
+      db.innerHTML = "";
+
+      SECTIONS.forEach(section => {
+        const sectionItems = items.filter(item => item.section === section);
+        if (sectionItems.length) {
+          const sectionDiv = document.createElement('div');
+          sectionDiv.className = "section";
+          sectionDiv.innerHTML = `<h3>${section}</h3>`;
+          
+          sectionItems.forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = "item";
+            itemDiv.innerHTML = `
+              <img src="${item.photo}" alt="${item.name}" />
+              <strong>${item.name}</strong><br />
+              <small>Code: ${item.code}</small>
+            `;
+            sectionDiv.appendChild(itemDiv);
+          });
+
+          db.appendChild(sectionDiv);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
