@@ -1,120 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Inventory System</title>
-  <style>
-    body { font-family: sans-serif; margin: 20px; }
-    .hidden { display: none; }
-    .section { margin-bottom: 20px; }
-    .item { border: 1px solid #ccc; padding: 10px; margin: 5px; display: inline-block; width: 200px; }
-    .item img { max-width: 100%; height: auto; }
-    input, select, button { margin: 5px 0; display: block; width: 100%; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory System</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        table, th, td { border: 1px solid black; }
+        th, td { padding: 10px; text-align: left; }
+    </style>
 </head>
 <body>
-  <div id="login">
-    <h2>Enter Admin Code</h2>
-    <input type="password" id="adminCodeInput" placeholder="Admin Code" />
-    <button onclick="checkCode()">Unlock</button>
-  </div>
-
-  <div id="main" class="hidden">
     <h1>Inventory System</h1>
 
-    <h2>Add New Item</h2>
-    <input type="text" id="itemName" placeholder="Item Name" />
-    <select id="itemSection">
-      <option>Jewelry</option>
-      <option>Furniture</option>
-      <option>Decoration Items</option>
-      <option>Idols</option>
-      <option>Electronics</option>
-      <option>Kitchen</option>
-      <option>Miscellaneous</option>
-      <option>Financial</option>
-    </select>
-    <input type="text" id="itemCode" placeholder="Item Code" />
-    <input type="file" id="itemPhoto" accept="image/*" />
-    <button onclick="addItem()">Add Item</button>
+    <!-- Admin Login Form -->
+    <div id="admin-login">
+        <h2>Admin Login</h2>
+        <input type="password" id="admin-code" placeholder="Enter admin code" />
+        <button onclick="checkAdminCode()">Login</button>
+        <p id="login-message"></p>
+    </div>
 
-    <h2>Database</h2>
-    <div id="database"></div>
-  </div>
+    <!-- Admin Functions (hidden by default) -->
+    <div id="admin-functions" style="display: none;">
+        <h2>Admin Panel</h2>
+        <h3>Create New Section</h3>
+        <input type="text" id="new-section-name" placeholder="Enter new section name" />
+        <button onclick="createSection()">Create Section</button>
 
-  <script>
-    const SECTIONS = [
-      "Jewelry", "Furniture", "Decoration Items", "Idols",
-      "Electronics", "Kitchen", "Miscellaneous", "Financial"
-    ];
+        <h3>Delete Item</h3>
+        <input type="text" id="item-to-delete" placeholder="Enter item code to delete" />
+        <button onclick="deleteItem()">Delete Item</button>
 
-    let items = JSON.parse(localStorage.getItem('inventoryItems') || '[]');
+        <h3>Add Item to Database</h3>
+        <input type="text" id="item-name" placeholder="Item Name" />
+        <select id="item-section">
+            <option value="Jewelry">Jewelry</option>
+            <option value="Furniture">Furniture</option>
+            <option value="Decoration">Decoration Items</option>
+            <option value="Idols">Idols</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Kitchen">Kitchen</option>
+            <option value="Miscellaneous">Miscellaneous</option>
+            <option value="Financial">Financial</option>
+        </select>
+        <input type="file" id="item-photo" accept="image/*" />
+        <input type="text" id="item-code" placeholder="Item Code" />
+        <button onclick="addItem()">Add Item</button>
+    </div>
 
-    function checkCode() {
-      const code = document.getElementById('adminCodeInput').value;
-      if (code === "1473") {
-        document.getElementById('login').classList.add('hidden');
-        document.getElementById('main').classList.remove('hidden');
-        displayItems();
-      } else {
-        alert("Wrong admin code!");
-      }
-    }
+    <!-- Database Table -->
+    <h3>Inventory Database</h3>
+    <table id="inventory-table">
+        <thead>
+            <tr>
+                <th>Item Name</th>
+                <th>Section</th>
+                <th>Item Code</th>
+                <th>Photo</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="inventory-list">
+            <!-- Database items will be listed here -->
+        </tbody>
+    </table>
 
-    function addItem() {
-      const name = document.getElementById('itemName').value;
-      const section = document.getElementById('itemSection').value;
-      const code = document.getElementById('itemCode').value;
-      const photoInput = document.getElementById('itemPhoto');
-      const file = photoInput.files[0];
+    <script>
+        const adminCode = '1473'; // Admin code for validation
+        let inventory = [];
+        let sections = ['Jewelry', 'Furniture', 'Decoration Items', 'Idols', 'Electronics', 'Kitchen', 'Miscellaneous', 'Financial'];
 
-      if (!name || !section || !code || !file) {
-        alert("Please fill in all fields including photo!");
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const base64 = e.target.result;
-        const newItem = { name, section, code, photo: base64 };
-        items.push(newItem);
-        localStorage.setItem('inventoryItems', JSON.stringify(items));
-        displayItems();
-
-        // Reset form
-        document.getElementById('itemName').value = "";
-        document.getElementById('itemCode').value = "";
-        document.getElementById('itemPhoto').value = "";
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function displayItems() {
-      const db = document.getElementById('database');
-      db.innerHTML = "";
-
-      SECTIONS.forEach(section => {
-        const sectionItems = items.filter(item => item.section === section);
-        if (sectionItems.length) {
-          const sectionDiv = document.createElement('div');
-          sectionDiv.className = "section";
-          sectionDiv.innerHTML = `<h3>${section}</h3>`;
-          
-          sectionItems.forEach(item => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = "item";
-            itemDiv.innerHTML = `
-              <img src="${item.photo}" alt="${item.name}" />
-              <strong>${item.name}</strong><br />
-              <small>Code: ${item.code}</small>
-            `;
-            sectionDiv.appendChild(itemDiv);
-          });
-
-          db.appendChild(sectionDiv);
+        // Display inventory items
+        function displayInventory() {
+            const inventoryList = document.getElementById('inventory-list');
+            inventoryList.innerHTML = '';
+            inventory.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.section}</td>
+                    <td>${item.code}</td>
+                    <td><img src="${item.photo}" width="50" height="50" alt="Item Photo" /></td>
+                    <td><button onclick="deleteItem('${item.code}')">Delete</button></td>
+                `;
+                inventoryList.appendChild(row);
+            });
         }
-      });
-    }
-  </script>
+
+        // Admin login check
+        function checkAdminCode() {
+            const enteredCode = document.getElementById('admin-code').value;
+            const message = document.getElementById('login-message');
+            if (enteredCode === adminCode) {
+                message.textContent = 'Welcome, Admin!';
+                document.getElementById('admin-login').style.display = 'none';
+                document.getElementById('admin-functions').style.display = 'block';
+            } else {
+                message.textContent = 'Incorrect admin code. Please try again.';
+            }
+        }
+
+        // Add new section
+        function createSection() {
+            const newSectionName = document.getElementById('new-section-name').value;
+            if (newSectionName && !sections.includes(newSectionName)) {
+                sections.push(newSectionName);
+                alert('New section created successfully!');
+            } else {
+                alert('Section already exists or input is empty!');
+            }
+        }
+
+        // Add new item
+        function addItem() {
+            const itemName = document.getElementById('item-name').value;
+            const itemSection = document.getElementById('item-section').value;
+            const itemPhoto = document.getElementById('item-photo').files[0];
+            const itemCode = document.getElementById('item-code').value;
+            if (itemName && itemCode && itemPhoto) {
+                const reader = new FileReader();
+                reader.onloadend = function () {
+                    inventory.push({
+                        name: itemName,
+                        section: itemSection,
+                        code: itemCode,
+                        photo: reader.result
+                    });
+                    displayInventory();
+                };
+                reader.readAsDataURL(itemPhoto);
+                alert('Item added successfully!');
+            } else {
+                alert('Please fill out all fields!');
+            }
+        }
+
+        // Delete item from inventory
+        function deleteItem(itemCode) {
+            if (prompt('Enter admin code to delete item') === adminCode) {
+                inventory = inventory.filter(item => item.code !== itemCode);
+                displayInventory();
+                alert('Item deleted successfully!');
+            } else {
+                alert('Incorrect admin code. Item not deleted.');
+            }
+        }
+
+        // Initialize page with some items
+        window.onload = function () {
+            inventory.push({
+                name: 'Ring',
+                section: 'Jewelry',
+                code: '001',
+                photo: 'https://via.placeholder.com/50'
+            });
+            inventory.push({
+                name: 'Sofa',
+                section: 'Furniture',
+                code: '002',
+                photo: 'https://via.placeholder.com/50'
+            });
+            displayInventory();
+        };
+    </script>
 </body>
 </html>
